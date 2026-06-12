@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안암 맛집 & 메뉴 랜덤 추천기 V2</title>
+    <style>
+        :root {
+            --ku-crimson: #a41c34; /* 고려대학교 상징색 */
+            --bg-gray: #f8f9fa;
+            --card-white: #ffffff;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+        }
+
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--card-white);
+            width: 100%;
+            max-width: 480px;
+            padding: 35px 25px;
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: var(--ku-crimson);
+            font-size: 26px;
+            margin: 0 0 8px 0;
+            font-weight: 800;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #495057;
+            text-align: left;
+        }
+
+        /* 카테고리 스타일 */
+        .category-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+
+        .category-btn {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            background: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .category-btn.active {
+            background: var(--ku-crimson);
+            color: #fff;
+            border-color: var(--ku-crimson);
+            font-weight: bold;
+        }
+
+        /* 가격 필터 스타일 */
+        .filter-group {
+            margin-bottom: 30px;
+            background: #f1f3f5;
+            padding: 15px;
+            border-radius: 16px;
+        }
+
+        .range-inputs {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .range-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .range-item label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .range-item input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        /* 추천 버튼 */
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--ku-crimson);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 12px rgba(164, 28, 52, 0.2);
+        }
+
+        .submit-btn:hover {
+            background: #821528;
+        }
+
+        /* 결과 화면 상자 */
+        #result-box {
+            margin-top: 30px;
+            padding: 25px;
+            border: 2px dashed #ced4da;
+            border-radius: 18px;
+            min-height: 120px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .placeholder {
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .result-card {
+            width: 100%;
+            display: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .res-name {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--ku-crimson);
+            margin-bottom: 8px;
+        }
+
+        .res-menu, .res-price {
+            font-size: 16px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .res-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+
+        .map-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 18px;
+            padding: 10px 16px;
+            background: #fee500; /* 카카오맵 느낌의 노란색 고정 */
+            color: #191919;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            transition: opacity 0.2s;
+        }
+
+        .map-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>오늘 뭐 먹지? 🍲</h1>
+        <p>기획서 조건 기반 안암동 맛집 무작위 추천 시스템</p>
+    </header>
+
+    <div class="section-title">음식 카테고리 선택</div>
+    <div class="category-group">
+        <button class="category-btn active" onclick="setCategory('all', this)">아무거나</button>
+        <button class="category-btn" onclick="setCategory('한식', this)">한식</button>
+        <button class="category-btn" onclick="setCategory('중식', this)">중식</button>
+        <button class="category-btn" onclick="setCategory('일식', this)">일식</button>
+        <button class="category-btn" onclick="setCategory('양식', this)">양식</button>
+        <button class="category-btn" onclick="setCategory('아시안', this)">아시안</button>
+        <button class="category-btn" onclick="setCategory('디저트', this)">디저트</button>
+        <button class="category-btn" onclick="setCategory('주점', this)">주점</button>
+    </div>
+
+    <div class="section-title">가격대 범위 지정 (원)</div>
+    <div class="filter-group">
+        <div class="range-inputs">
+            <div class="range-item">
+                <label for="min-price">최소 금액</label>
+                <input type="number" id="min-price" value="0" min="0" step="1000">
+            </div>
+            <div style="margin-top: 18px; color: #adb5bd;">~</div>
+            <div class="range-item">
+                <label for="max-price">최대 금액</label>
+                <input type="number" id="max-price" value="50000" min="0" step="1000">
+            </div>
+        </div>
+    </div>
+
+    <button class="submit-btn" onclick="pickRandomRestaurant()">🎲 조건 맞춤 식당 룰렛 돌리기</button>
+
+    <div id="result-box">
+        <div id="placeholder" class="placeholder">원하는 조건을 입력하고 버튼을 누르면<br>최종 1개의 식당을 선정해 드립니다!</div>
+        <div id="result-content" class="result-card">
+            <span class="badge" id="res-tag"></span>
+            <div class="res-name" id="res-name"></div>
+            <div class="res-menu" id="res-menu"></div>
+            <div class="res-price" id="res-price"></div>
+            <div class="res-desc" id="res-desc"></div>
+            <a href="#" target="_blank" id="res-map-link" class="map-btn">📍 지도에서 위치 보기</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 현재 선택된 카테고리 상태 관리
+    let selectedCategory = 'all';
+
+    function setCategory(category, element) {
+        selectedCategory = category;
+        const buttons = document.querySelectorAll('.category-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        element.classList.add('active');
+    }
+
+    // 모든 카테고리 최소 5개 이상 보장된 36개 대량 맛집 데이터셋
+    const restaurantData = [
+        // === 한식 (6) ===
+        { name: "고기반찬", category: "한식", menu: "제육볶음 정식", price: 9000, desc: "든든하게 밥 한 끼 먹기 좋은 학생들의 백반집", query: "안암 고기반찬" },
+        { name: "동우설렁탕", category: "한식", menu: "설렁탕", price: 10000, desc: "깊은 국물 맛이 일품인 전통 있는 노포 맛집", query: "안암 동우설렁탕" },
+        { name: "형제집", category: "한식", menu: "돼지불고기", price: 9500, desc: "연탄불 향 가득한 고기에 밥 볶아먹는 골목 맛집", query: "안암 형제집" },
+        { name: "소담길", category: "한식", menu: "부대찌개", price: 8500, desc: "라면사리 무한 공급으로 배를 든든히 채우는 곳", query: "안암 소담길" },
+        { name: "어머니대성집", category: "한식", menu: "육회비빔밥", price: 17000, desc: "새벽 해장과 든든한 식사를 책임지는 명물 식당", query: "어머니대성집" },
+        { name: "수다라 부대찌개", category: "한식", menu: "부대찌개", price: 9000, desc: "칼칼하고 깔끔한 육수가 매력적인 찌개 전문점", query: "안암 수다라" },
+
+        // === 중식 (5) ===
+        { name: "용용선생 안암점", category: "중식", menu: "화산마라전골", price: 23000, desc: "비주얼 폭발 마라전골과 홍콩식 감성의 만남", query: "용용선생 안암점" },
+        { name: "중화객잔", category: "중식", menu: "짜장면 & 탕수육", price: 7000, desc: "기본에 충실하며 가성비가 훌륭한 정통 중국집", query: "안암 중화객잔" },
+        { name: "더씨", category: "중식", menu: "해물짬뽕", price: 9000, desc: "얼큰하고 시원한 국물이 당기는 날 가기 좋은 곳", query: "안암 더씨" },
+        { name: "마라토끼", category: "중식", menu: "마라탕", price: 12000, desc: "트렌디하고 깔끔한 인테리어의 마라요리 전문점", query: "안암 마라토끼" },
+        { name: "용차이", category: "중식", menu: "찹쌀탕수육", price: 18000, desc: "쫀득한 식감의 탕수육과 식사류 요리가 알찬 곳", query: "안암 용차이" },
+
+        // === 일식 (5) ===
+        { name: "백소정 안암점", category: "일식", menu: "마제소바 + 돈카츠 정식", price: 14500, desc: "실패 없이 정갈하게 나오는 일식 정식의 정석", query: "백소정 안암점" },
+        { name: "가야가야", category: "일식", menu: "돈코츠라멘", desc: "일본 현지 느낌을 살린 깊은 돈골 육수 라멘", price: 9500, query: "안암 가야가야" },
+        { name: "연어동", category: "일식", menu: "사케동 (연어덮밥)", price: 15000, desc: "두툼하고 신선한 연어가 가득 올라간 시그니처 덮밥", query: "안암 연어동" },
+        { name: "고려대 특별식당", category: "일식", menu: "규동 (소고기덮밥)", price: 9000, desc: "혼밥족들을 위한 아늑하고 정갈한 일식당", query: "안암 특별식당" },
+        { name: "야마토텐동", category: "일식", menu: "에비텐동 (새우튀김덮밥)", price: 13000, desc: "주문 즉시 튀겨 바삭함이 살아있는 튀김덮밥 명가", query: "안암 야마토텐동" },
+
+        // === 양식 (5) ===
+        { name: "매스플레이트", category: "양식", menu: "목살 스테이크 샐러드", price: 22000, desc: "푸짐한 양과 보장된 맛으로 데이트/모임에 최적화", query: "안암 매스플레이트" },
+        { name: "무르무르드구스토", category: "양식", menu: "트러플 크림 리조또", price: 19000, desc: "소중한 날 분위기 내기 좋은 이탈리안 레스토랑", query: "무르무르드구스토" },
+        { name: "미뇽", category: "양식", menu: "연어 아보카도 샐러드", price: 13500, desc: "건강하고 신선한 식단을 추구하는 웰빙 맛집", query: "안암 미뇽" },
+        { name: "쿠이도락", category: "양식", menu: "치킨 가라아게 오므라이스", price: 8500, desc: "경양식 스타일의 오므라이스를 가성비 있게 즐기는 곳", query: "안암 쿠이도락" },
+        { name: "고대 화로피자", category: "양식", menu: "고르곤졸라 화덕피자", price: 16500, desc: "담백하고 쫄깃한 도우가 특징인 화덕피자 전문점", query: "안암 화로피자" },
+
+        // === 아시안 (5) ===
+        { name: "근처식당", category: "아시안", menu: "소고기 쌀국수", price: 10500, desc: "이국적이면서도 한국인 입맛에 딱 맞춘 동남아 요리", query: "안암 근처식당" },
+        { name: "방콕스토리", category: "아시안", menu: "팟타이 (볶음면)", price: 11000, desc: "태국 현지의 맛을 고스란히 옮겨온 숨은 강자", query: "안암 방콕스토리" },
+        { name: "포앤시드니 안암점", category: "아시안", menu: "양지 차돌 쌀국수", price: 9500, desc: "세트 구성이 알차고 국물이 깔끔한 베트남 음식점", query: "포앤시드니 안암점" },
+        { name: "미고랭 하우스", category: "아시안", menu: "나시고랭", price: 9000, desc: "인도네시아식 볶음밥과 면요리를 전문으로 하는 곳", query: "안암 미고랭하우스" },
+        { name: "발리하이", category: "아시안", menu: "분짜", price: 13000, desc: "새콤달콤한 소스에 찍어 먹는 숯불고기 국수가 맛있는 집", query: "안암 발리하이" },
+
+        // === 디저트 (5) ===
+        { name: "커피수플레", category: "디저트", menu: "딸기 수플레 팬케이크", price: 16000, desc: "입안에서 사르르 녹는 폭신한 수플레 전문점", query: "안암 커피수플레" },
+        { name: "디어브레드", category: "디저트", menu: "바질 치아바타", price: 4500, desc: "빵순이들의 성지라 불리는 담백한 베이커리 숍", query: "안암 디어브레드" },
+        { name: "와플앨리", category: "디저트", menu: "젤라또 와플 세트", price: 12500, desc: "겉바속촉 수제 와플과 수제 젤라또의 환상 조합", query: "안암 와플앨리" },
+        { name: "정만빙수", category: "디저트", menu: "피스타치오 녹차빙수", price: 8000, desc: "안암동 가성비 빙수의 절대 강자", query: "안암 정만빙수" },
+        { name: "카페 브레망", category: "디저트", menu: "수제 에그타르트 & 까눌레", price: 3800, desc: "구움과자 굽는 냄새가 향긋한 아기자기한 감성 카페", query: "안암 브레망" },
+
+        // === 주점 (5) ===
+        { name: "춘자", category: "주점", menu: "요구르트 소주 & 안주세트", price: 15000, desc: "고려대 학생들의 추억과 낭만이 깃든 소울 주점", query: "안암 춘자" },
+        { name: "더프이(The Pui)", category: "주점", menu: "시그니처 칵테일", price: 8000, desc: "아늑한 아지트 분위기에서 대화하기 좋은 칵테일 바", query: "안암 더프이" },
+        { name: "느린마을양조장 안암점", category: "주점", menu: "느린마을 수제 막걸리", price: 9000, desc: "숙성도에 따라 봄, 여름, 가을, 겨울 골라 마시는 양조장", query: "느린마을양조장 안암점" },
+        { name: "역전할머니맥주 안암점", category: "주점", menu: "살얼음 생맥주 500cc", price: 4500, desc: "가슴속까지 시원해지는 얼음잔 맥주와 가성비 마른안주", query: "역전할머니맥주 안암점" },
+        { name: "금별맥주 안암점", category: "주점", menu: "백합조개 버터술찜", price: 15900, desc: "레트로 모던풍 인테리어로 안주 퀄리티가 우수한 요리주점", query: "금별맥주 안암점" }
+    ];
+
+    function pickRandomRestaurant() {
+        // 1. 유효성 검사 및 필터 조건 수집 (PRD 반영)
+        const minPrice = parseInt(document.getElementById('min-price').value) || 0;
+        const maxPrice = parseInt(document.getElementById('max-price').value) || 999999;
+
+        if (minPrice > maxPrice) {
+            alert("최소 금액이 최대 금액보다 클 수 없습니다. 다시 설정해 주세요.");
+            return;
+        }
+
+        // 2. 기획서 조건 매칭 데이터 추출 (카테고리 + 가격대 동시 필터링)
+        let filteredList = restaurantData;
+
+        if (selectedCategory !== 'all') {
+            filteredList = filteredList.filter(res => res.category === selectedCategory);
+        }
+
+        filteredList = filteredList.filter(res => res.price >= minPrice && res.price <= maxPrice);
+
+        // 3. 예외 처리 (조건에 맞는 데이터가 없을 때)
+        if (filteredList.length === 0) {
+            alert("지정한 조건(카테고리/가격 범위)에 맞는 식당이 존재하지 않습니다. 범위를 넓혀보세요!");
+            return;
+        }
+
+        // 4. 무작위 추출 알고리즘 작동 (PRD 반영)
+        const randomIndex = Math.floor(Math.random() * filteredList.length);
+        const finalSelected = filteredList[randomIndex];
+
+        // 5. 화면 UI 렌더링 전환
+        document.getElementById('placeholder').style.display = 'none';
+        const resultContent = document.getElementById('result-content');
+        resultContent.style.display = 'block';
+
+        // 데이터 정보 매핑
+        document.getElementById('res-tag').innerText = "📌 " + finalSelected.category;
+        document.getElementById('res-name').innerText = finalSelected.name;
+        document.getElementById('res-menu').innerText = "추천 메뉴: " + finalSelected.menu;
+        document.getElementById('res-price').innerText = "기준 가격: " + finalSelected.price.toLocaleString() + "원";
+        document.getElementById('res-desc').innerText = "💡 " + finalSelected.desc;
+
+        // 카카오맵 검색결과 연동 자동 링크 생성 (PRD 반영)
+        const mapUrl = "https://map.kakao.com/?q=" + encodeURIComponent(finalSelected.query);
+        document.getElementById('res-map-link').href = mapUrl;
+    }
+</script>
+
+</body>
+</html>
